@@ -8,13 +8,7 @@ const [previousOperand, setPreviousOperand] = useState('');
 const [currentOperand, setCurrentOperand] = useState('0');
 const notDigitsOrDecimal = /[^0-9.]/;
 const digitsOrDecimal = /[0-9.]/;
-// const checkForMathExpression = new RegExp(/(?:(?:^|[-+_*/])(?:\s*-?\d+(\.\d+)?(?:[eE][+-]?\d+)?\s*))+$/) ;
 
-
-// function parse(str) {
-//   if (!checkForMathExpression.test(str)) return 'invalid entry!'
-//   return Function(`'use strict'; return (${str})`)()
-// };
 // function to remove last character of a string
 const removeLastCharacter = (string) => {
   return string
@@ -30,12 +24,18 @@ const removeSecondToLastCharacter = (string) => {
   .join('')
 };
 
-// function when a number or decimal is clicked
+const removeLastTwoOperators = (string) => {
+  return string
+  .split('')
+  .slice(0, string.length -4)
+  .join('')
+};
+
 const addDigit = (event) => {
   const numberClick = event.target.className.includes('number');
   const buttonText = event.target.innerText;
   const id = event.target.id
-  // prevent multiple zeros as first digits or multiple decimals in currentOperand
+  // prevent edge cases
   if(numberClick && previousOperand.includes('=')) return currentOperand
   if(id === 'decimal' && currentOperand.includes('.')) return currentOperand
   if(id === 'zero' && currentOperand === '0') return currentOperand
@@ -63,19 +63,24 @@ const addDigit = (event) => {
     return currentOperand;
   }
 };
-// function when an operator is clicked
+
 const chooseOperation = (event) => {
-  // prevent digit press when there is a calcualted answer
+  // prevent edge case
   if(previousOperand.includes('=') && event.target.innerText.match(digitsOrDecimal)) return currentOperand
   // allow the answer to be operated on
   if(previousOperand.includes('=')) {
     const answer = previousOperand.split('= ')
     setCurrentOperand(event.target.innerText)
     setPreviousOperand(`${answer[1]} ${event.target.innerText} `)
+    // allow operator change after negative operator input
+  } else if(currentOperand === '-' && event.target.className.includes('operator')) {
+    setCurrentOperand(event.target.innerText)
+    setPreviousOperand(`${removeLastTwoOperators(previousOperand)} ${event.target.innerText} `)
     // allow negative number after operator
   } else if(currentOperand.match(notDigitsOrDecimal) && event.target.id === 'subtract') {
-    setCurrentOperand(`${event.target.innerText}`)
+    setCurrentOperand(event.target.innerText)
     setPreviousOperand(`${previousOperand}${event.target.innerText}`)
+    // allow first operand to be negative
   } else if(currentOperand.length > 1 && currentOperand.includes('-') && event.target.innerText.match(notDigitsOrDecimal)) {
     setCurrentOperand(event.target.innerText)
     setPreviousOperand(`${previousOperand} ${event.target.innerText}`)
@@ -87,10 +92,8 @@ const chooseOperation = (event) => {
     setCurrentOperand(event.target.innerText)
     setPreviousOperand(`${previousOperand} ${event.target.innerText} `)
   }
-}
+};
 
-
-// function when clear is clicked
 const clear = (event) => {
   if (event.target.id === 'clear') {
     setCurrentOperand('0')
@@ -107,18 +110,18 @@ const deleteOne = (event) => {
   setPreviousOperand((prev) => removeLastCharacter(prev))
 };
 
-// function to evaluate the expression
 const calculate = () => {
-
     setCurrentOperand(evaluate(previousOperand))
     setPreviousOperand(`${previousOperand} = ${evaluate(previousOperand)}`)
 };
   return (
     <div id='app'>
       <div className='grid'>
+        <div id='full-display'>
           <div id='previousOperand'>{previousOperand}</div>
-        <div id='display'>
-          <div id='currentOperand'>{currentOperand}</div>
+          <div id='display'>
+            <div id='currentOperand'>{currentOperand}</div>
+          </div>
         </div>
         <div id='clear' className='padButton'  onClick={clear}>AC</div>
         <div id='delete' className='padButton'  onClick={deleteOne}>DEL</div>
